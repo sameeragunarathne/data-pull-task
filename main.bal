@@ -11,22 +11,24 @@ import ballerina/log;
 configurable DataSyncConfig dataSyncConfig = {
     raapidAIServiceUrl: "http://localhost:9092",
     dataSyncServiceUrl: "http://localhost:9091",
-    fhirAPIConfig: {
-        "Patient": {
+    fhirAPIConfig: [
+        {
             rapidAIAPIContext: "/r4/Patient",
+            'type: "Patient",
             payload: {
                 id: "eBZnFnAwp8rVbEJP1yHg7rw3",
                 resourceType: "Patient"
             }
         },
-        "Encounter": {
+        {
             rapidAIAPIContext: "/r4/Encounter",
+            'type: "Encounter",
             payload: {
                 id: "elC.GW.gA0.Ex86-vRDqmlw3",
                 resourceType: "Encounter"
             }
         }
-    }
+    ]
 };
 
 final http:Client raapidAIAPI = check new (dataSyncConfig.raapidAIServiceUrl);
@@ -34,15 +36,15 @@ final http:Client dataSyncAPI = check new (dataSyncConfig.dataSyncServiceUrl);
 
 public function main() returns error? {
     do {
-        foreach var [key, value] in dataSyncConfig.fhirAPIConfig.entries() {
+        foreach FHIRAPIConfig value in dataSyncConfig.fhirAPIConfig {
             http:Response data = check dataSyncAPI->post("/sync", value.payload);
             json dataJson = check data.getJsonPayload();
             log:printInfo("Data received from data sync service", data = dataJson.toString());
             http:Response patientAPIResponse = check raapidAIAPI->post(value.rapidAIAPIContext, dataJson);
             if patientAPIResponse.statusCode == http:STATUS_CREATED {
-                log:printInfo(string `${key} created successfully`);
+                log:printInfo(string `${value.'type} created successfully`);
             } else {
-                log:printError(string `Error while creating ${key}`);
+                log:printError(string `Error while creating ${value.'type}`);
             }
         }
     } on fail error e {
@@ -53,10 +55,11 @@ public function main() returns error? {
 public type DataSyncConfig record {
     string raapidAIServiceUrl;
     string dataSyncServiceUrl;
-    map<FHIRAPIConfig> fhirAPIConfig;
+    FHIRAPIConfig[] fhirAPIConfig;
 };
 
 public type FHIRAPIConfig record {
+    string 'type;
     string rapidAIAPIContext;
     json payload;
 };
