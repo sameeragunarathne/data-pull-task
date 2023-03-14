@@ -13,6 +13,7 @@ public function main() returns error? {
     do {
         http:Response data = check dataSyncAPI->post("/sync", payload);
         json dataJson = check data.getJsonPayload();
+        log:printInfo("Data received from data sync service", data = dataJson.toString());
         http:Response patientAPIResponse = check raapidAIAPI->post("/r4/Patient", dataJson);
         if patientAPIResponse.statusCode == http:STATUS_CREATED {
             log:printInfo("Patient created successfully");
