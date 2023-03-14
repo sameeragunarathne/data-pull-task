@@ -11,24 +11,20 @@ import ballerina/log;
 configurable DataSyncConfig dataSyncConfig = {
     raapidAIServiceUrl: "http://localhost:9092",
     dataSyncServiceUrl: "http://localhost:9091",
-    fhirAPIConfig: [
-        {
-            rapidAIAPIContext: "/r4/Patient",
-            'type: "Patient",
-            payload: {
-                id: "eBZnFnAwp8rVbEJP1yHg7rw3",
-                resourceType: "Patient"
-            }
+    raapidAIAPIConfig: {
+        "Patient": "/r4/Patient",
+        "Encounter": "/r4/Encounter"
+    },
+    payloadConfig: {
+        "Patient": {
+            id: "eBZnFnAwp8rVbEJP1yHg7rw3",
+            resourceType: "Patient"
         },
-        {
-            rapidAIAPIContext: "/r4/Encounter",
-            'type: "Encounter",
-            payload: {
-                id: "elC.GW.gA0.Ex86-vRDqmlw3",
-                resourceType: "Encounter"
-            }
+        "Encounter": {
+            id: "elC.GW.gA0.Ex86-vRDqmlw3",
+            resourceType: "Encounter"
         }
-    ]
+    }
 };
 
 final http:Client raapidAIAPI = check new (dataSyncConfig.raapidAIServiceUrl);
@@ -36,15 +32,17 @@ final http:Client dataSyncAPI = check new (dataSyncConfig.dataSyncServiceUrl);
 
 public function main() returns error? {
     do {
-        foreach FHIRAPIConfig value in dataSyncConfig.fhirAPIConfig {
-            http:Response data = check dataSyncAPI->post("/sync", value.payload);
+
+        foreach var [key, value] in dataSyncConfig.raapidAIAPIConfig.entries() {
+            json & readonly payload = dataSyncConfig.payloadConfig[key];
+            http:Response data = check dataSyncAPI->post("/sync", payload);
             json dataJson = check data.getJsonPayload();
             log:printInfo("Data received from data sync service", data = dataJson.toString());
-            http:Response patientAPIResponse = check raapidAIAPI->post(value.rapidAIAPIContext, dataJson);
+            http:Response patientAPIResponse = check raapidAIAPI->post(value, dataJson);
             if patientAPIResponse.statusCode == http:STATUS_CREATED {
-                log:printInfo(string `${value.'type} created successfully`);
+                log:printInfo(string `${key} created successfully`);
             } else {
-                log:printError(string `Error while creating ${value.'type}`);
+                log:printError(string `Error while creating ${key}`);
             }
         }
     } on fail error e {
@@ -55,7 +53,8 @@ public function main() returns error? {
 public type DataSyncConfig record {
     string raapidAIServiceUrl;
     string dataSyncServiceUrl;
-    FHIRAPIConfig[] fhirAPIConfig;
+    map<string> raapidAIAPIConfig;
+    map<json> payloadConfig;
 };
 
 public type FHIRAPIConfig record {
