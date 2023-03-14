@@ -1,13 +1,6 @@
 import ballerina/http;
 import ballerina/log;
 
-// configurable string raapidAIServiceUrl = "http://localhost:9092";
-// configurable string dataSyncServiceUrl = "http://localhost:9091";
-// configurable map<string> raapidAIAPIConfig = {
-//     "Patient": "/r4/Patient",
-//     "Encounter": "/r4/Encounter"
-// };
-// configurable json payload = {id: "1"};
 configurable DataSyncConfig dataSyncConfig = {
     raapidAIServiceUrl: "http://localhost:9092",
     dataSyncServiceUrl: "http://localhost:9091",
