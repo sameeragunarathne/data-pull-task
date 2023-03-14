@@ -29,6 +29,7 @@ public function main() returns error? {
 
         foreach var [key, value] in dataSyncConfig.raapidAIAPIConfig.entries() {
             string payloadStr = <string>dataSyncConfig.payloadConfig[key];
+            log:printInfo("Payload received from config", payload = payloadStr);
             json payload = check payloadStr.fromJsonString();
             http:Response data = check dataSyncAPI->post("/sync", payload);
             json dataJson = check data.getJsonPayload();
