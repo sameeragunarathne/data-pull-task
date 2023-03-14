@@ -16,14 +16,8 @@ configurable DataSyncConfig dataSyncConfig = {
         "Encounter": "/r4/Encounter"
     },
     payloadConfig: {
-        "Patient": {
-            id: "eBZnFnAwp8rVbEJP1yHg7rw3",
-            resourceType: "Patient"
-        },
-        "Encounter": {
-            id: "elC.GW.gA0.Ex86-vRDqmlw3",
-            resourceType: "Encounter"
-        }
+        "Patient": "{\"id\": \"eBZnFnAwp8rVbEJP1yHg7rw3\", \"resourceType\": \"Patient\"}",
+        "Encounter": "{\"id\": \"elC.GW.gA0.Ex86-vRDqmlw3\", \"resourceType\": \"Encounter\"}" 
     }
 };
 
@@ -34,7 +28,8 @@ public function main() returns error? {
     do {
 
         foreach var [key, value] in dataSyncConfig.raapidAIAPIConfig.entries() {
-            json & readonly payload = dataSyncConfig.payloadConfig[key];
+            string payloadStr = <string>dataSyncConfig.payloadConfig[key];
+            json payload = check payloadStr.fromJsonString();
             http:Response data = check dataSyncAPI->post("/sync", payload);
             json dataJson = check data.getJsonPayload();
             log:printInfo("Data received from data sync service", data = dataJson.toString());
@@ -54,7 +49,7 @@ public type DataSyncConfig record {
     string raapidAIServiceUrl;
     string dataSyncServiceUrl;
     map<string> raapidAIAPIConfig;
-    map<json> payloadConfig;
+    map<string> payloadConfig;
 };
 
 public type FHIRAPIConfig record {
